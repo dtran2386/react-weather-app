@@ -12,25 +12,31 @@ function App() {
   const [selectedState, setSelectedState] = useState("");
   const [weather, setWeather] = useState("");
 
+  const [lat, setLat] = useState(null);
+  const [lng, setLng] = useState(null);
+  const [status, setStatus] = useState(null);
+
   const onClickHandler = async (e) => {
     e.preventDefault();
 
     try {
-      const response = await axios
-        .get(
-          `${api.base}weather?q=${selectedCity},${selectedState},USA&units=imperial&appid=${api.key}`
-        )
-        .then((result) => {
-          console.log(result.data);
+      if (selectedCity && selectedState) {
+        await axios
+          .get(
+            `${api.base}weather?q=${selectedCity},${selectedState},USA&units=imperial&appid=${api.key}`
+          )
+          .then((result) => {
+            console.log(result.data);
 
-          setWeather(result.data);
-          setSelectedCity("");
-          setSelectedState("");
-        });
+            setWeather(result.data);
+            setSelectedCity("");
+            setSelectedState("");
+          });
+      }
     } catch (error) {
       console.error(error.response);
       if (error.response.status === 404) {
-        prompt("Please double check your spelling!");
+        alert("Please double check your spelling!");
       }
     }
   };
@@ -56,9 +62,34 @@ function App() {
 
   const locationCheck = () => {
     if (weather !== "") {
-      let location = weather.name.split(" ").slice(0, 1);
+      let location = weather.name.split(" ").slice(0);
       return location;
     }
+  };
+
+  const getLocation = async () => {
+    if (!navigator.geolocation)
+      setStatus("Geolocation is not supported by your browser");
+
+    setStatus("Locating...");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setStatus(null);
+        setLat(position.coords.latitude);
+        setLng(position.coords.longitude);
+      },
+      () => {
+        setStatus("Unable to retrieve your location");
+      }
+    );
+
+    await axios
+      .get(
+        `${api.base}weather?lat=${lat}&lon=${lng}&units=imperial&appid=${api.key}`
+      )
+      .then((result) => {
+        setWeather(result.data);
+      });
   };
 
   return (
@@ -89,6 +120,11 @@ function App() {
               </div>
               {situationCheck()}
             </div>
+          </div>
+          <div className="App">
+            <button className="btn" onClick={getLocation}>
+              Use your Location
+            </button>
           </div>
           <div className="select-area">
             <form onSubmit={onClickHandler}>
