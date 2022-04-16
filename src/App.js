@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import "./App.css";
 
 const api = {
@@ -90,6 +90,7 @@ function App() {
       .then((result) => {
         setWeather(result.data);
       });
+    <div>{status}</div>;
   };
 
   return (
