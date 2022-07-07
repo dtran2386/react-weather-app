@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 
 const api = {
@@ -15,6 +15,19 @@ function App() {
   const [lat, setLat] = useState(null);
   const [lng, setLng] = useState(null);
   const [status, setStatus] = useState(null);
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setStatus(null);
+        setLat(position.coords.latitude);
+        setLng(position.coords.longitude);
+      },
+      () => {
+        setStatus("Unable to retrieve your location");
+      }
+    );
+  }, []);
 
   const onClickHandler = async (e) => {
     e.preventDefault();
@@ -72,16 +85,6 @@ function App() {
       setStatus("Geolocation is not supported by your browser");
 
     setStatus("Locating...");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setStatus(null);
-        setLat(position.coords.latitude);
-        setLng(position.coords.longitude);
-      },
-      () => {
-        setStatus("Unable to retrieve your location");
-      }
-    );
 
     await axios
       .get(

@@ -148,8 +148,11 @@ main {
 }
 
 input {
-  width: 275px;
+  width: 21em;
+  height: 2em;
   border-radius: 5px;
-  background-color: lightgray;
+  border: 5px solid #fff;
+  margin-bottom: 1%;
+  background-color: whitesmoke;
   color: black;
 }
