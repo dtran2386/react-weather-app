@@ -1,6 +1,9 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
+import moment from 'moment-timezone'
 import "./App.css";
+import SearchForm from './components/SearchForm'
+import { tempCheck, situationCheck, locationCheck } from './helpers/checks'
 
 const api = {
   key: process.env.REACT_APP_API_KEY,
@@ -11,6 +14,7 @@ function App() {
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [weather, setWeather] = useState("");
+  const [forecast, setForecast] = useState([])
 
   const [lat, setLat] = useState(null);
   const [lng, setLng] = useState(null);
@@ -39,11 +43,16 @@ function App() {
             `${api.base}weather?q=${selectedCity},${selectedState},USA&units=imperial&appid=${api.key}`
           )
           .then((result) => {
-            console.log(result.data);
-
             setWeather(result.data);
             setSelectedCity("");
             setSelectedState("");
+          });
+        await axios
+          .get(
+            `${api.base}forecast?q=${selectedCity},${selectedState},USA&units=imperial&appid=${api.key}`
+          )
+          .then((result) => {
+            setForecast(result.data.list)
           });
       }
     } catch (error) {
@@ -51,32 +60,6 @@ function App() {
       if (error.response.status === 404) {
         alert("Please double check your spelling!");
       }
-    }
-  };
-
-  const tempCheck = () => {
-    if (weather !== "") {
-      let temp = Math.round(weather.main.temp);
-      let finalText = temp + "°";
-      return finalText;
-    }
-  };
-
-  const situationCheck = () => {
-    if (weather !== "") {
-      let situation = weather.weather[0].main;
-      return (
-        <div className="situation">
-          <h3>{situation}</h3>
-        </div>
-      );
-    }
-  };
-
-  const locationCheck = () => {
-    if (weather !== "") {
-      let location = weather.name.split(" ").slice(0);
-      return location;
     }
   };
 
@@ -92,6 +75,14 @@ function App() {
       )
       .then((result) => {
         setWeather(result.data);
+      });
+
+    await axios
+      .get(
+        `${api.base}forecast?lat=${lat}&lon=${lng}&units=imperial&appid=${api.key}`
+      )
+      .then((result) => {
+        setForecast(result.data.list)
       });
     <div>{status}</div>;
   };
@@ -117,39 +108,31 @@ function App() {
       >
         <main>
           <div className="top">
-            <div className="location">{locationCheck()}</div>
+            <div className="location">{locationCheck(weather)}</div>
             <div>
               <div className="temp">
-                <h2>{tempCheck()}</h2>
+                <h2>{tempCheck(weather)}</h2>
               </div>
-              {situationCheck()}
+              {situationCheck(weather)}
             </div>
+          </div>
+          <div className="card-container">
+            {forecast.slice(0,5).map(item => (
+              <div key={item.dt} className="card">
+                {/* {item.dt_txt} <br/><br/> */}
+                {moment(item.dt_txt).tz('America/New_York').format('MMMM Do YYYY h:mm:ss a')} <br/><br/>
+                {<h1>{`${item.main.temp}°`}</h1>}<br/><br/>
+                {item.weather[0].description}
+                {<img src={`http://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`} alt="weather icon" />}
+              </div>
+            ))}
           </div>
           <div className="App">
             <button className="btn" onClick={getLocation}>
               Use your Location
             </button>
           </div>
-          <div className="select-area">
-            <form onSubmit={onClickHandler}>
-              <input
-                type="text"
-                value={selectedCity}
-                placeholder="Please enter a US city name"
-                onChange={(e) => setSelectedCity(e.target.value)}
-              />
-              <br />
-              <input
-                type="text"
-                value={selectedState}
-                placeholder="Please enter a US state name (abbreviation)"
-                onChange={(e) => setSelectedState(e.target.value)}
-              />
-              <br />
-              <br />
-              <button className="btn">Submit</button>
-            </form>
-          </div>
+          <SearchForm onClickHandler={onClickHandler} selectedCity={selectedCity} selectedState={selectedState} setSelectedCity={setSelectedCity} setSelectedState={setSelectedState} />
         </main>
       </div>
     </div>
